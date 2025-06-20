@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Online Code Compiler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #262626;
+            --text-primary: #e5e5e5;
+            --text-secondary: #a3a3a3;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-orange: #f59e0b;
+            --border-color: #404040;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1f1f1f 100%);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(90deg, var(--bg-secondary) 0%, #2a2a2a 100%);
+            padding: 1rem 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: none;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            gap: 1rem;
+            padding: 1rem;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .editor-panel, .output-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            min-height: 0;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+            min-width: 400px;
+        }
+
+        .output-panel {
+            flex: 0.8;
+            min-width: 300px;
+        }
+
+        .panel-header {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            background: var(--bg-tertiary);
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            padding: 0.25rem;
+            gap: 0.25rem;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            background: var(--accent-blue);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .code-editor {
+            flex: 1;
+            resize: none;
+            border: none;
+            outline: none;
+            padding: 1.5rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            caret-color: var(--accent-blue);
+            box-sizing: border-box;
+            white-space: pre;
+            overflow: auto;
+            tab-size: 4;
+            min-height: 0;
+        }
+
+        .code-editor::placeholder {
+            color: #666;
+            font-style: italic;
+        }
+
+        .code-editor:focus {
+            outline: none;
+            box-shadow: inset 0 0 0 1px var(--accent-blue);
+        }
+
+        .output-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .output-area {
+            flex: 1;
+            background: var(--bg-secondary);
+            overflow: auto;
+            color: var(--text-primary);
+            border-radius: 8px;
+            margin: 0.5rem;
+            border: 1px solid var(--border-color);
+            min-height: 0;
+        }
+
+        .console-area {
+            height: 120px;
+            background: linear-gradient(135deg, #000000, #1a1a1a);
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            padding: 1rem;
+            overflow-y: auto;
+            border-top: 1px solid var(--border-color);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .console-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .console-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .console-area::-webkit-scrollbar-thumb {
+            background: var(--accent-blue);
+            border-radius: 3px;
+        }
+
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 6px;
+        }
+
+        .btn {
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-tertiary {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .btn-tertiary:hover {
+            background: #7c3aed;
+            transform: translateY(-1px);
+        }
+
+        .modal {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-ready { background: var(--accent-green); }
+        .status-running { background: var(--accent-orange); animation: pulse 1s infinite; }
+        .status-error { background: var(--accent-red); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .language-indicator {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .console-clear-btn {
+            background: transparent;
+            border: 1px solid #404040;
+            color: #888;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .console-clear-btn:hover {
+            border-color: #666;
+            color: #bbb;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+                gap: 0.75rem;
+                padding: 0.75rem;
+            }
+            
+            .editor-panel, .output-panel {
+                flex: none;
+                min-width: unset;
+            }
+            
+            .editor-panel {
+                height: 50vh;
+                min-height: 300px;
+            }
+            
+            .output-panel {
+                height: 40vh;
+                min-height: 250px;
+            }
+            
+            .console-area {
+                height: 80px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 0.75rem;
+                align-items: stretch;
+            }
+            
+            .header-right {
+                justify-content: center;
+                gap: 0.5rem;
+            }
+            
+            .btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .main-container {
+                padding: 0.5rem;
+                gap: 0.5rem;
+            }
+            
+            .tab-button {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            .code-editor {
+                padding: 1rem;
+                font-size: 13px;
+            }
+        }
+
+        /* Loading Animation */
+        .loader {
+            border: 3px solid #333;
+            border-top: 3px solid var(--accent-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                        🚀 CodeLab Pro
+                    </h1>
+                    <div class="flex items-center">
+                        <span class="status-indicator status-ready" id="statusIndicator"></span>
+                        <span class="text-sm text-gray-400" id="statusText">Ready</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button id="explainCodeButton" class="btn btn-tertiary">
+                        ✨ Explain Code
+                    </button>
+                    <button id="improveCodeButton" class="btn btn-secondary">
+                        🔧 Improve Code
+                    </button>
+                    <button id="runButton" class="btn btn-primary">
+                        ▶️ Run Code
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-container">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <div class="tab-buttons">
+                        <button class="tab-button active" data-lang="html">HTML</button>
+                        <button class="tab-button" data-lang="css">CSS</button>
+                        <button class="tab-button" data-lang="js">JavaScript</button>
+                        <button class="tab-button" data-lang="python">Python</button>
+                        <button class="tab-button" data-lang="cpp">C++</button>
+                    </div>
+                    <div class="language-indicator" id="languageIndicator">HTML</div>
+                </div>
+
+                <textarea id="html-editor" class="code-editor" placeholder="Write your HTML code here... ✨"><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Awesome Web Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        p {
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 Hello World!</h1>
+        <p>Welcome to your enhanced code editor experience!</p>
+        <button id="magicButton">Click for Magic ✨</button>
+    </div>
+    <script>
+        document.getElementById('magicButton').addEventListener('click', function() {
+            this.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
+            this.textContent = '🌟 Magic Activated!';
+            console.log('Magic button clicked! ✨');
+        });
+    </script>
+</body>
+</html></textarea>
+
+                <textarea id="css-editor" class="code-editor hidden" placeholder="Write your CSS magic here... 🎨">/* Modern CSS Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    text-align: center;
+    max-width: 500px;
+    transition: transform 0.3s ease;
+}
+
+.container:hover {
+    transform: translateY(-5px);
+}
+
+h1 {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+    font-size: 2.5em;
+    font-weight: bold;
+}
+
+p {
+    color: #555;
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+button {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
+}</textarea>
+
+                <textarea id="js-editor" class="code-editor hidden" placeholder="Write your JavaScript logic here... ⚡">// Enhanced JavaScript functionality
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Page loaded successfully!');
+    
+    const button = document.getElementById('magicButton');
+    const container = document.querySelector('.container');
+    
+    if (button) {
+        let clickCount = 0;
+        
+        button.addEventListener('click', function() {
+            clickCount++;
+            
+            // Cycle through different states
+            switch(clickCount % 4) {
+                case 1:
+                    this.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
+                    this.textContent = '🌟 Magic Activated!';
+                    console.log('✨ Magic button activated!');
+                    break;
+                case 2:
+                    this.style.background = 'linear-gradient(135deg, #4ecdc4, #44a08d)';
+                    this.textContent = '🎨 Color Changed!';
+                    container.style.background = 'linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(255, 255, 255, 0.95))';
+                    console.log('🎨 Colors updated!');
+                    break;
+                case 3:
+                    this.style.background = 'linear-gradient(135deg, #ffeaa7, #fdcb6e)';
+                    this.textContent = '⭐ Golden State!';
+                    container.style.transform = 'scale(1.05) rotate(2deg)';
+                    console.log('⭐ Golden transformation!');
+                    break;
+                case 0:
+                    this.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                    this.textContent = '🔄 Reset Complete!';
+                    container.style.background = 'rgba(255, 255, 255, 0.95)';
+                    container.style.transform = 'scale(1) rotate(0deg)';
+                    console.log('🔄 Reset to original state!');
+                    break;
+            }
+            
+            // Add some visual feedback
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 150);
+        });
+        
+        // Add hover effects
+        button.addEventListener('mouseenter', function() {
+            console.log('👆 Button hovered!');
+        });
+    }
+    
+    // Add some interactive console messages
+    console.log('🎯 Ready for interaction!');
+    console.log('💡 Try clicking the magic button multiple times!');
+});</textarea>
+
+                <textarea id="python-editor" class="code-editor hidden" placeholder="Write your Python code here... 🐍"># Python Code Example
+print("🐍 Hello from Python!")
+print("=" * 30)
+
+# Simple calculator function
+def calculate(a, b, operation):
+    operations = {
+        '+': lambda x, y: x + y,
+        '-': lambda x, y: x - y,
+        '*': lambda x, y: x * y,
+        '/': lambda x, y: x / y if y != 0 else "Error: Division by zero!"
+    }
+    return operations.get(operation, lambda x, y: "Invalid operation")(a, b)
+
+# Example calculations
+print("📊 Calculator Examples:")
+print(f"10 + 5 = {calculate(10, 5, '+')}")
+print(f"10 - 3 = {calculate(10, 3, '-')}")
+print(f"7 * 8 = {calculate(7, 8, '*')}")
+print(f"20 / 4 = {calculate(20, 4, '/')}")
+
+# List comprehension example
+numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+squares = [x**2 for x in numbers if x % 2 == 0]
+print(f"🔢 Squares of even numbers: {squares}")
+
+# Dictionary example
+student_grades = {
+    "Alice": 95,
+    "Bob": 87,
+    "Charlie": 92,
+    "Diana": 98
+}
+
+print("🎓 Student Grades:")
+for name, grade in student_grades.items():
+    print(f"{name}: {grade}%")
+
+average = sum(student_grades.values()) / len(student_grades)
+print(f"📈 Class Average: {average:.1f}%")</textarea>
+
+                <textarea id="cpp-editor" class="code-editor hidden" placeholder="Write your C++ code here... ⚙️">#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+
+using namespace std;
+
+// Function to demonstrate basic C++ features
+void demonstrateFeatures() {
+    cout << "🔧 C++ Features Demo" << endl;
+    cout << "===================" << endl;
+    
+    // Variables and data types
+    int number = 42;
+    double pi = 3.14159;
+    string message = "Hello, C++!";
+    bool isAwesome = true;
+    
+    cout << "📊 Variables:" << endl;
+    cout << "Integer: " << number << endl;
+    cout << "Double: " << pi << endl;
+    cout << "String: " << message << endl;
+    cout << "Boolean: " << (isAwesome ? "true" : "false") << endl;
+    cout << endl;
+    
+    // Vector operations
+    vector<int> numbers = {1, 5, 3, 9, 2, 8, 4, 7, 6};
+    cout << "📈 Vector Operations:" << endl;
+    cout << "Original: ";
+    for(int num : numbers) {
+        cout << num << " ";
+    }
+    cout << endl;
+    
+    // Sort the vector
+    sort(numbers.begin(), numbers.end());
+    cout << "Sorted: ";
+    for(int num : numbers) {
+        cout << num << " ";
+    }
+    cout << endl;
+    
+    // Find maximum and minimum
+    int maxNum = *max_element(numbers.begin(), numbers.end());
+    int minNum = *min_element(numbers.begin(), numbers.end());
+    cout << "Max: " << maxNum << ", Min: " << minNum << endl;
+    cout << endl;
+}
+
+// Simple class example
+class Calculator {
+private:
+    string name;
+    
+public:
+    Calculator(string calcName) : name(calcName) {}
+    
+    double add(double a, double b) { return a + b; }
+    double subtract(double a, double b) { return a - b; }
+    double multiply(double a, double b) { return a * b; }
+    double divide(double a, double b) { 
+        return (b != 0) ? a / b : 0; 
+    }
+    
+    void showInfo() {
+        cout << "🧮 Calculator: " << name << endl;
+    }
+};
+
+int main() {
+    cout << "🚀 Welcome to C++ Programming!" << endl;
+    cout << endl;
+    
+    // Demonstrate basic features
+    demonstrateFeatures();
+    
+    // Demonstrate class usage
+    Calculator calc("Advanced Calculator");
+    calc.showInfo();
+    
+    double x = 15.5, y = 4.2;
+    cout << "🔢 Calculations with " << x << " and " << y << ":" << endl;
+    cout << "Addition: " << calc.add(x, y) << endl;
+    cout << "Subtraction: " << calc.subtract(x, y) << endl;
+    cout << "Multiplication: " << calc.multiply(x, y) << endl;
+    cout << "Division: " << calc.divide(x, y) << endl;
+    
+    cout << endl << "✅ Program completed successfully!" << endl;
+    
+    return 0;
+}</textarea>
+            </div>
+
+            <div class="output-panel">
+                <div class="tab-buttons">
+                    <span class="text-white text-base font-semibold py-2 px-4 flex items-center">
+                        📺 Output & Console
+                    </span>
+                </div>
+                <div class="output-content">
+                    <div id="output-area" class="output-area">
+                        <iframe id="result-frame" class="w-full h-full"></iframe>
+                        <pre id="code-output" class="hidden text-white font-mono whitespace-pre-wrap p-4 h-full overflow-auto"></pre>
+                    </div>
+                    <div id="console-area" class="console-area">
+                        <div class="console-header">
+                            <span class="text-green-400 font-bold">💻 Console:</span>
+                            <button id="clearConsole" class="console-clear-btn">
+                                Clear
+                            </button>
+                        </div>
+                        <div id="console-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Modal -->
+    <div id="llmResponseModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
+        <div class="modal-content rounded-xl shadow-2xl p-8 w-11/12 max-w-4xl max-h-[90vh] overflow-hidden relative">
+            <h2 id="modalTitle" class="text-2xl font-bold text-white mb-6 flex items-center">
+                <span class="mr-3">🤖</span>
+                AI Assistant
+            </h2>
+            <div class="bg-gray-900 rounded-lg p-6 max-h-96 overflow-auto">
+                <pre id="modalContent" class="text-gray-300 whitespace-pre-wrap font-mono text-sm leading-relaxed"></pre>
+            </div>
+            <button id="closeModalButton" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold transition duration-200">&times;</button>
+            <div id="loadingIndicator" class="hidden absolute inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center rounded-xl">
+                <div class="loader mb-6"></div>
+                <p class="text-white text-xl font-semibold">🧠 AI is thinking...</p>
+                <p class="text-gray-400 text-sm mt-2">This may take a few moments</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
+        <div class="modal-content rounded-xl shadow-2xl p-8 w-11/12 max-w-md">
+            <h2 class="text-xl font-bold text-white mb-4">⚙️ Settings</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Gemini API Key:</label>
+                    <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key" 
+                           class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:outline-none">
+                    <p class="text-xs text-gray-500 mt-1">Get your free API key from Google AI Studio</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="saveSettings" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        Save
+                    </button>
+                    <button id="closeSettings" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class CodeEditor {
+            constructor() {
+                this.active

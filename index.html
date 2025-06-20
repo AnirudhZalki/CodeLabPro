@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Your existing CSS styles */
         :root {
             --bg-primary: #0f0f0f;
             --bg-secondary: #1a1a1a;
@@ -324,11 +325,34 @@
             color: #bbb;
         }
 
+        .console-log {
+            margin-bottom: 0.5rem;
+            font-size: 12px;
+        }
+
+        .console-log.info { color: var(--accent-green); }
+        .console-log.error { color: var(--accent-red); }
+        .console-log.warning { color: var(--accent-orange); }
+        .console-log.success { color: #22c55e; }
+
         .hidden {
             display: none !important;
         }
 
-        /* Responsive Design */
+        .loader {
+            border: 3px solid #333;
+            border-top: 3px solid var(--accent-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @media (max-width: 1024px) {
             .main-container {
                 flex-direction: column;
@@ -392,21 +416,6 @@
                 font-size: 13px;
             }
         }
-
-        /* Loading Animation */
-        .loader {
-            border: 3px solid #333;
-            border-top: 3px solid var(--accent-blue);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
@@ -423,6 +432,12 @@
                     </div>
                 </div>
                 <div class="header-right">
+                    <button id="saveButton" class="btn btn-secondary">
+                        💾 Save
+                    </button>
+                    <button id="loadButton" class="btn btn-tertiary">
+                        📂 Load
+                    </button>
                     <button id="explainCodeButton" class="btn btn-tertiary">
                         ✨ Explain Code
                     </button>
@@ -506,11 +521,8 @@
         <button id="magicButton">Click for Magic ✨</button>
     </div>
     <script>
-        document.getElementById('magicButton').addEventListener('click', function() {
-            this.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
-            this.textContent = '🌟 Magic Activated!';
-            console.log('Magic button clicked! ✨');
-        });
+        // Initial JS for HTML output, augmented below by main script
+        // This is necessary if the HTML itself has inline script.
     </script>
 </body>
 </html></textarea>
@@ -760,8 +772,8 @@ int main() {
     cout << "🔢 Calculations with " << x << " and " << y << ":" << endl;
     cout << "Addition: " << calc.add(x, y) << endl;
     cout << "Subtraction: " << calc.subtract(x, y) << endl;
-    cout << "Multiplication: " << calc.multiply(x, y) << endl;
     cout << "Division: " << calc.divide(x, y) << endl;
+    cout << "Multiplication: " << calc.multiply(x, y) << endl;
     
     cout << endl << "✅ Program completed successfully!" << endl;
     
@@ -794,7 +806,6 @@ int main() {
         </div>
     </div>
 
-    <!-- Enhanced Modal -->
     <div id="llmResponseModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
         <div class="modal-content rounded-xl shadow-2xl p-8 w-11/12 max-w-4xl max-h-[90vh] overflow-hidden relative">
             <h2 id="modalTitle" class="text-2xl font-bold text-white mb-6 flex items-center">
@@ -813,30 +824,405 @@ int main() {
         </div>
     </div>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
-        <div class="modal-content rounded-xl shadow-2xl p-8 w-11/12 max-w-md">
-            <h2 class="text-xl font-bold text-white mb-4">⚙️ Settings</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Gemini API Key:</label>
-                    <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key" 
-                           class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:outline-none">
-                    <p class="text-xs text-gray-500 mt-1">Get your free API key from Google AI Studio</p>
+    <div id="saveLoadModal" class="modal fixed inset-0 flex items-center justify-center hidden z-50">
+        <div class="modal-content rounded-xl shadow-2xl p-8 w-11/12 max-w-2xl relative">
+            <h2 id="saveLoadModalTitle" class="text-2xl font-bold text-white mb-6 flex items-center">
+                <span class="mr-3">💾</span>
+                Manage Projects
+            </h2>
+            <div id="saveLoadContent" class="space-y-4">
+                <div id="saveSection">
+                    <h3 class="text-lg font-semibold text-white mb-3">Save Current Project</h3>
+                    <input type="text" id="projectName" placeholder="Enter project name..." 
+                            class="w-full px-4 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500">
+                    <button id="saveProjectButton" class="btn btn-primary mt-3">💾 Save Project</button>
                 </div>
-                <div class="flex space-x-3">
-                    <button id="saveSettings" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
-                        Save
-                    </button>
-                    <button id="closeSettings" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition">
-                        Cancel
-                    </button>
+                <div id="loadSection">
+                    <h3 class="text-lg font-semibold text-white mb-3">Load Project</h3>
+                    <ul id="projectList" class="bg-gray-800 border border-gray-600 rounded-lg p-3 max-h-48 overflow-y-auto">
+                        <li class="text-gray-400 text-center py-2">No saved projects yet.</li>
+                    </ul>
                 </div>
             </div>
+            <button id="closeSaveLoadModalButton" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold transition duration-200">&times;</button>
         </div>
     </div>
 
     <script>
-        class CodeEditor {
-            constructor() {
-                this.active
+        const editors = {
+            html: document.getElementById('html-editor'),
+            css: document.getElementById('css-editor'),
+            js: document.getElementById('js-editor'),
+            python: document.getElementById('python-editor'),
+            cpp: document.getElementById('cpp-editor')
+        };
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const runButton = document.getElementById('runButton');
+        const resultFrame = document.getElementById('result-frame');
+        const codeOutputPre = document.getElementById('code-output');
+        const consoleContentDiv = document.getElementById('console-content');
+        const clearConsoleButton = document.getElementById('clearConsole');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const languageIndicator = document.getElementById('languageIndicator');
+
+        // Modal elements for AI responses
+        const llmResponseModal = document.getElementById('llmResponseModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const explainCodeButton = document.getElementById('explainCodeButton');
+        const improveCodeButton = document.getElementById('improveCodeButton');
+
+        // Modal elements for Save/Load
+        const saveButton = document.getElementById('saveButton');
+        const loadButton = document.getElementById('loadButton');
+        const saveLoadModal = document.getElementById('saveLoadModal');
+        const saveLoadModalTitle = document.getElementById('saveLoadModalTitle');
+        const saveLoadContent = document.getElementById('saveLoadContent');
+        const closeModalSaveLoadButton = document.getElementById('closeSaveLoadModalButton');
+        const projectNameInput = document.getElementById('projectName');
+        const saveProjectButton = document.getElementById('saveProjectButton');
+        const projectList = document.getElementById('projectList');
+
+        let activeLanguage = 'html';
+
+        // --- Utility Functions ---
+        function setStatus(status, message) {
+            statusIndicator.className = `status-indicator status-${status}`;
+            statusText.textContent = message;
+        }
+
+        function logToConsole(message, type = 'info') {
+            const logElement = document.createElement('div');
+            logElement.className = `console-log ${type}`;
+            logElement.textContent = message;
+            consoleContentDiv.appendChild(logElement);
+            consoleContentDiv.scrollTop = consoleContentDiv.scrollHeight; // Auto-scroll to bottom
+        }
+
+        function clearOutput() {
+            resultFrame.srcdoc = ''; // Clear HTML iframe
+            codeOutputPre.textContent = ''; // Clear text output for Python/C++
+            codeOutputPre.classList.add('hidden');
+            resultFrame.classList.remove('hidden');
+            logToConsole('Console cleared.', 'info');
+            consoleContentDiv.innerHTML = ''; // Clear console content
+        }
+
+        // --- Tab Switching Logic ---
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const lang = button.dataset.lang;
+
+                // Deactivate all buttons and hide all editors
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                Object.values(editors).forEach(editor => editor.classList.add('hidden'));
+
+                // Activate clicked button and show corresponding editor
+                button.classList.add('active');
+                editors[lang].classList.remove('hidden');
+                languageIndicator.textContent = lang.toUpperCase();
+                activeLanguage = lang;
+
+                // Adjust output panel visibility based on language
+                if (['html', 'css', 'js'].includes(activeLanguage)) {
+                    resultFrame.classList.remove('hidden');
+                    codeOutputPre.classList.add('hidden');
+                } else {
+                    resultFrame.classList.add('hidden');
+                    codeOutputPre.classList.remove('hidden');
+                }
+                clearOutput(); // Clear output when switching tabs
+                setStatus('ready', 'Ready');
+            });
+        });
+
+        // --- Run Code Logic ---
+        runButton.addEventListener('click', async () => {
+            clearOutput();
+            setStatus('running', 'Running...');
+            const code = editors[activeLanguage].value;
+
+            logToConsole(`Attempting to run ${activeLanguage.toUpperCase()} code...`, 'info');
+
+            if (['html', 'css', 'js'].includes(activeLanguage)) {
+                // Client-side execution for web languages
+                let fullHtml = editors.html.value;
+                const cssCode = editors.css.value;
+                const jsCode = editors.js.value;
+
+                // Inject CSS and JS into the HTML content
+                fullHtml = fullHtml.replace('</head>', `<style>${cssCode}</style></head>`);
+                fullHtml = fullHtml.replace('</body>', `<script>${jsCode}</script></body>`);
+
+                resultFrame.srcdoc = fullHtml;
+                resultFrame.onload = () => {
+                    setStatus('ready', 'Execution Complete');
+                    logToConsole('HTML, CSS, JS rendered successfully.', 'success');
+                    
+                    // Capture console.log from the iframe
+                    try {
+                        const iframeWindow = resultFrame.contentWindow;
+                        const originalConsoleLog = iframeWindow.console.log;
+                        const originalConsoleError = iframeWindow.console.error;
+                        const originalConsoleWarn = iframeWindow.console.warn;
+
+                        iframeWindow.console.log = (...args) => {
+                            logToConsole(`(Output) ${args.join(' ')}`, 'info');
+                            originalConsoleLog.apply(iframeWindow.console, args);
+                        };
+                        iframeWindow.console.error = (...args) => {
+                            logToConsole(`(Output Error) ${args.join(' ')}`, 'error');
+                            originalConsoleError.apply(iframeWindow.console, args);
+                        };
+                        iframeWindow.console.warn = (...args) => {
+                            logToConsole(`(Output Warning) ${args.join(' ')}`, 'warning');
+                            originalConsoleWarn.apply(iframeWindow.console, args);
+                        };
+                    } catch (e) {
+                        logToConsole('Could not intercept iframe console. Cross-origin policy might apply.', 'warning');
+                    }
+                };
+            } else {
+                // Server-side execution for Python and C++
+                try {
+                    const response = await fetch('http://localhost:3000/execute', { // Adjust URL if your backend is elsewhere
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            lang: activeLanguage,
+                            code: code
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        codeOutputPre.textContent = data.output;
+                        setStatus('ready', 'Execution Complete');
+                        logToConsole(`${activeLanguage.toUpperCase()} code executed successfully.`, 'success');
+                        if (data.output) {
+                            logToConsole('--- Program Output ---', 'info');
+                            logToConsole(data.output, 'info');
+                        }
+                    } else {
+                        codeOutputPre.textContent = data.error || 'Unknown error';
+                        setStatus('error', 'Execution Error');
+                        logToConsole(`Error executing ${activeLanguage.toUpperCase()} code:`, 'error');
+                        logToConsole(data.error, 'error');
+                        if (data.output) { // sometimes stderr comes with some stdout
+                             logToConsole('--- Partial Output ---', 'info');
+                             logToConsole(data.output, 'info');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Network or server error:', error);
+                    codeOutputPre.textContent = `Failed to connect to backend: ${error.message}`;
+                    setStatus('error', 'Network Error');
+                    logToConsole(`Failed to connect to server: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        clearConsoleButton.addEventListener('click', () => {
+            consoleContentDiv.innerHTML = '';
+            logToConsole('Console cleared by user.', 'info');
+        });
+
+        // --- LLM (AI) Integration ---
+        async function showLLMResponse(title, promptType) {
+            modalTitle.textContent = `🤖 AI Assistant - ${title}`;
+            modalContent.textContent = '';
+            llmResponseModal.classList.remove('hidden');
+            loadingIndicator.classList.remove('hidden');
+            modalContent.classList.add('hidden'); // Hide content while loading
+
+            const currentCode = editors[activeLanguage].value;
+            const currentLang = activeLanguage;
+
+            try {
+                // In a real application, you'd send this to your Node.js backend,
+                // which would then communicate with an actual LLM API (e.g., Gemini API).
+                // For this example, we'll simulate a response.
+                
+                // Example: Fetching from a hypothetical backend endpoint for LLM
+                // const response = await fetch('http://localhost:3000/llm-query', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({
+                //         promptType: promptType,
+                //         language: currentLang,
+                //         code: currentCode
+                //     })
+                // });
+                // const data = await response.json();
+                // if (response.ok) {
+                //     modalContent.textContent = data.response;
+                // } else {
+                //     modalContent.textContent = `Error: ${data.error || 'Failed to get AI response.'}`;
+                // }
+
+                // Simulated AI response for demonstration:
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call delay
+                let simulatedResponse = "";
+                if (promptType === 'explain') {
+                    simulatedResponse = `This ${currentLang.toUpperCase()} code snippet ${
+                        currentLang === 'html' ? 'defines the structure of a web page' :
+                        currentLang === 'css' ? 'styles the elements of a web page' :
+                        currentLang === 'js' ? 'adds interactivity to the web page' :
+                        currentLang === 'python' ? 'demonstrates basic Python functions like a calculator, list comprehensions, and dictionary iteration.' :
+                        currentLang === 'cpp' ? 'showcases fundamental C++ concepts including variable declaration, vector manipulation, and a simple class definition.' :
+                        ''
+                    }.\n\nIt features:\n- Basic structure/syntax of ${currentLang.toUpperCase()}.\n- How to perform common operations.\n- Example usage relevant to the language.`;
+                } else if (promptType === 'improve') {
+                    simulatedResponse = `To improve this ${currentLang.toUpperCase()} code, consider:\n\n1. **Readability:** Add more comments, especially for complex logic.\n2. **Error Handling:** Implement more robust error checks (e.g., for user input).\n3. **Modularity:** Break down larger functions into smaller, more focused ones.\n4. **Performance:** For C++/Python, optimize algorithms for large datasets.\n5. **Best Practices:** Adhere to common ${currentLang.toUpperCase()} style guides.\n\n_Example improvement for Python: Use f-strings for all print statements consistently._`;
+                }
+                modalContent.textContent = simulatedResponse;
+
+            } catch (error) {
+                console.error('Error getting LLM response:', error);
+                modalContent.textContent = `An error occurred: ${error.message}`;
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                modalContent.classList.remove('hidden'); // Show content
+            }
+        }
+
+        explainCodeButton.addEventListener('click', () => showLLMResponse('Explain Code', 'explain'));
+        improveCodeButton.addEventListener('click', () => showLLMResponse('Improve Code', 'improve'));
+        closeModalButton.addEventListener('click', () => llmResponseModal.classList.add('hidden'));
+
+        // --- Save/Load Functionality ---
+        function saveProject(projectName) {
+            const projectData = {};
+            for (const lang in editors) {
+                projectData[lang] = editors[lang].value;
+            }
+            localStorage.setItem(`codelab_project_${projectName}`, JSON.stringify(projectData));
+            logToConsole(`Project "${projectName}" saved!`, 'success');
+            updateProjectList();
+        }
+
+        function loadProject(projectName) {
+            const projectData = JSON.parse(localStorage.getItem(`codelab_project_${projectName}`));
+            if (projectData) {
+                for (const lang in editors) {
+                    editors[lang].value = projectData[lang] || '';
+                }
+                // Automatically switch to HTML tab after loading if it exists
+                if (projectData.html) {
+                    tabButtons.forEach(btn => {
+                        if (btn.dataset.lang === 'html') btn.click();
+                    });
+                } else {
+                     // If no HTML, just re-activate the current tab to refresh content
+                     tabButtons.forEach(btn => {
+                        if (btn.dataset.lang === activeLanguage) btn.click();
+                    });
+                }
+                logToConsole(`Project "${projectName}" loaded!`, 'success');
+            } else {
+                logToConsole(`Project "${projectName}" not found.`, 'error');
+            }
+        }
+
+        function deleteProject(projectName) {
+            if (confirm(`Are you sure you want to delete "${projectName}"?`)) {
+                localStorage.removeItem(`codelab_project_${projectName}`);
+                logToConsole(`Project "${projectName}" deleted.`, 'info');
+                updateProjectList();
+            }
+        }
+
+        function updateProjectList() {
+            projectList.innerHTML = '';
+            let projectsFound = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('codelab_project_')) {
+                    projectsFound = true;
+                    const projectName = key.replace('codelab_project_', '');
+                    const listItem = document.createElement('li');
+                    listItem.className = 'flex justify-between items-center bg-gray-700 p-2 rounded-md mb-2 last:mb-0';
+                    listItem.innerHTML = `
+                        <span class="text-white">${projectName}</span>
+                        <div>
+                            <button class="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs load-btn" data-project="${projectName}">Load</button>
+                            <button class="btn btn-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs delete-btn ml-2" data-project="${projectName}">Delete</button>
+                        </div>
+                    `;
+                    projectList.appendChild(listItem);
+                }
+            }
+            if (!projectsFound) {
+                projectList.innerHTML = '<li class="text-gray-400 text-center py-2">No saved projects yet.</li>';
+            }
+
+            // Add event listeners to newly created buttons
+            projectList.querySelectorAll('.load-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    loadProject(e.target.dataset.project);
+                    saveLoadModal.classList.add('hidden'); // Close modal after loading
+                });
+            });
+            projectList.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    deleteProject(e.target.dataset.project);
+                });
+            });
+        }
+
+        saveButton.addEventListener('click', () => {
+            saveLoadModal.classList.remove('hidden');
+            saveLoadModalTitle.innerHTML = `<span class="mr-3">💾</span> Save Project`;
+            document.getElementById('saveSection').classList.remove('hidden');
+            document.getElementById('loadSection').classList.add('hidden');
+            projectNameInput.value = ''; // Clear previous input
+            updateProjectList();
+        });
+
+        loadButton.addEventListener('click', () => {
+            saveLoadModal.classList.remove('hidden');
+            saveLoadModalTitle.innerHTML = `<span class="mr-3">📂</span> Load Project`;
+            document.getElementById('saveSection').classList.add('hidden');
+            document.getElementById('loadSection').classList.remove('hidden');
+            updateProjectList();
+        });
+
+        closeModalSaveLoadButton.addEventListener('click', () => saveLoadModal.classList.add('hidden'));
+
+        saveProjectButton.addEventListener('click', () => {
+            const projectName = projectNameInput.value.trim();
+            if (projectName) {
+                saveProject(projectName);
+                saveLoadModal.classList.add('hidden'); // Close modal after saving
+            } else {
+                alert('Please enter a project name.');
+            }
+        });
+
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            editors.html.classList.remove('hidden'); // Ensure HTML editor is visible on load
+            languageIndicator.textContent = 'HTML';
+            setStatus('ready', 'Ready');
+            logToConsole('Welcome to CodeLab Pro!', 'info');
+            logToConsole('Select a language and click Run Code.', 'info');
+            // Ensure the correct output panel is visible on load (HTML is default)
+            resultFrame.classList.remove('hidden');
+            codeOutputPre.classList.add('hidden');
+            // Populate project list initially
+            updateProjectList();
+        });
+
+        // Initialize with HTML tab active
+        tabButtons[0].click();
+
+    </script>
+</body>
+</html>
